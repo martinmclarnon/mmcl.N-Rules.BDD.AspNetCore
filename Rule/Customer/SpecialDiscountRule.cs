@@ -1,4 +1,5 @@
-﻿using Domain;
+﻿using System;
+using Domain;
 using NRules.Fluent.Dsl;
 
 namespace CustomRule.Customer
@@ -23,15 +24,15 @@ namespace CustomRule.Customer
                     .Match<Domain.Customer>(() => customer, c => c.IsExisting && c.IsEligibleForSpecialDiscount)
                     .And(xx => xx
                         .Match<Domain.Customer>(() => customer, c => !c.IsExisting && !c.IsEligibleForSpecialDiscount)
-                        .Exists<Order>(o => o.Customer == customer, o => o.Amount >= 1000.00)
+                        .Exists<Order>(o => o.Customer == customer, o => o.Amount >= 1000)
                     )
-                   );
+                );
             Filter()
                 .OnChange(() => order.Quantity, () => order.UnitPrice);
             Then()
                 .Do(ctx => ctx.Update(order, ApplyDiscount));
         }
-
+        
         private static void ApplyDiscount(Order order)
         {
             order.IsDiscountApplied = true;
