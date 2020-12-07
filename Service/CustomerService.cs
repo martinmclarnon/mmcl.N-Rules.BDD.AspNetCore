@@ -41,7 +41,11 @@ namespace Service
             session.Update(customer);
             session.Fire();
 
-            return new RuleResponse { RuleStatus = order.IsDiscountApplied ? RuleStatus.Success : RuleStatus.Failed };
+            return new RuleResponse
+            {
+                RuleStatus = order.IsDiscountApplied ? RuleStatus.Success : RuleStatus.Failed,
+                Order = order
+            };
         }
     }
 }

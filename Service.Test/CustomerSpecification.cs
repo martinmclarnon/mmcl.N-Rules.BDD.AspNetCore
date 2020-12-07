@@ -40,6 +40,7 @@ namespace Service.Test
         /// Then a valid message will be returned as "IsDiscountApplied" Order property will equal true
         /// </summary>
         /// <param name="customerName"></param>
+        /// <param name="customerType"></param>
         /// <param name="isExisting"></param>
         /// <param name="isEligibleForSpecialDiscount"></param>
         /// <param name="orderId"></param>
@@ -49,44 +50,35 @@ namespace Service.Test
         /// <param name="ruleRequest"></param>
         /// <param name="ruleResponse"></param>
         [Scenario]
-        [Example("Mickey Mouse", true, true, 121236, 1, 500d)]
-        [Example("Minnie Mouse", true, true, 121237, 2, 300d)]
-        [Example("Donald Duck", true, true, 121238, 9, 200d)]
-        [Example("Daisy Duck", true, true, 121239, 3, 1200d)]
-        public void RuleEngine_ValidImplementation_IsExistingCustomer_IsEligibleForSpecialDiscount_ReturnsValidStatement(
-            string customerName,
-            bool isExisting,
-            bool isEligibleForSpecialDiscount,
-            int orderId,
-            int quantity,
-            double unitPrice,
-            ICustomerService customerService,
-            IRuleRequest ruleRequest,
-            IRuleResponse ruleResponse
-        )
+        [Example("Mickey Mouse", CustomerType.Gold, true, true, 121236, 1, 500d)]
+        [Example("Minnie Mouse", CustomerType.Silver, true, true, 121237, 2, 300d)]
+        [Example("Donald Duck", CustomerType.Bronze, true, true, 121238, 9, 200d)]
+        [Example("Daisy Duck", CustomerType.Gold, true, true, 121239, 3, 1200d)]
+        public void
+            RuleEngine_ValidImplementation_IsExistingCustomer_IsEligibleForSpecialDiscount_ReturnsValidStatement(
+                string customerName,
+                CustomerType customerType,
+                bool isExisting,
+                bool isEligibleForSpecialDiscount,
+                int orderId,
+                int quantity,
+                double unitPrice,
+                ICustomerService customerService,
+                IRuleRequest ruleRequest,
+                IRuleResponse ruleResponse
+            )
         {
-
             "Given the Customer is an existing customer eligible for a special discount"
                 .x(() =>
                 {
-                    var customer = new Customer(customerName)
-                    { IsExisting = isExisting, IsEligibleForSpecialDiscount = isEligibleForSpecialDiscount };
-                    var order = new Order(orderId, customer, quantity, unitPrice);
-
+                    ruleRequest = HydrateRuleRequest(customerName, customerType, isExisting,
+                        isEligibleForSpecialDiscount, orderId, quantity, unitPrice);
                     customerService = new CustomerService();
-
-                    ruleRequest = new RuleRequest { Customer = customer, Order = order };
                 });
             "When the Special Discount Rule is applied"
                 .x(() => { ruleResponse = customerService.Execute(ruleRequest); });
             "Then a valid message will be returned"
-                .x(() =>
-                {
-                    using (new AssertionScope())
-                    {
-                        ruleResponse.RuleStatus.Should().Be(RuleStatus.Success);
-                    }
-                });
+                .x(() => { ValidAssertion(ruleResponse); });
         }
 
         /// <summary>
@@ -99,6 +91,7 @@ namespace Service.Test
         /// Then a valid message will be returned as "IsDiscountApplied" Order property will equal true
         /// </summary>
         /// <param name="customerName"></param>
+        /// <param name="customerType"></param>
         /// <param name="isExisting"></param>
         /// <param name="isEligibleForSpecialDiscount"></param>
         /// <param name="orderId"></param>
@@ -108,12 +101,13 @@ namespace Service.Test
         /// <param name="ruleRequest"></param>
         /// <param name="ruleResponse"></param>
         [Scenario]
-        [Example("Mickey Mouse", false, false, 121236, 1, 1000d)]
-        [Example("Minnie Mouse", false, false, 121237, 4, 300d)]
-        [Example("Donald Duck", false, false, 121238, 9, 200d)]
-        [Example("Daisy Duck", false, false, 121239, 3, 1200d)]
+        [Example("Mickey Mouse", CustomerType.New, false, false, 121236, 1, 1000d)]
+        [Example("Minnie Mouse", CustomerType.New, false, false, 121237, 4, 300d)]
+        [Example("Donald Duck", CustomerType.New, false, false, 121238, 9, 200d)]
+        [Example("Daisy Duck", CustomerType.New, false, false, 121239, 3, 1200d)]
         public void RuleEngine_ValidImplementation_NotExistingCustomer_NotEligibleForSpecialDiscount_OrderTotalOver1000_ReturnsValidStatement(
                 string customerName,
+                CustomerType customerType,
                 bool isExisting,
                 bool isEligibleForSpecialDiscount,
                 int orderId,
@@ -124,28 +118,17 @@ namespace Service.Test
                 IRuleResponse ruleResponse
         )
         {
-
             "Given the Customer is a new customer spending over £1000"
                 .x(() =>
                 {
-                    var customer = new Customer(customerName)
-                    { IsExisting = isExisting, IsEligibleForSpecialDiscount = isEligibleForSpecialDiscount };
-                    var order = new Order(orderId, customer, quantity, unitPrice);
-
+                    ruleRequest = HydrateRuleRequest(customerName, customerType, isExisting,
+                        isEligibleForSpecialDiscount, orderId, quantity, unitPrice);
                     customerService = new CustomerService();
-
-                    ruleRequest = new RuleRequest { Customer = customer, Order = order };
                 });
             "When the Special Discount Rule is applied"
                 .x(() => { ruleResponse = customerService.Execute(ruleRequest); });
             "Then a valid message will be returned"
-                .x(() =>
-                {
-                    using (new AssertionScope())
-                    {
-                        ruleResponse.RuleStatus.Should().Be(RuleStatus.Success);
-                    }
-                });
+                .x(() => { ValidAssertion(ruleResponse); });
         }
 
         /// <summary>
@@ -158,6 +141,7 @@ namespace Service.Test
         /// Then an invalid message will be returned as "IsDiscountApplied" Order property will equal true
         /// </summary>
         /// <param name="customerName"></param>
+        /// <param name="customerType"></param>
         /// <param name="isExisting"></param>
         /// <param name="isEligibleForSpecialDiscount"></param>
         /// <param name="orderId"></param>
@@ -167,12 +151,14 @@ namespace Service.Test
         /// <param name="ruleRequest"></param>
         /// <param name="ruleResponse"></param>
         [Scenario]
-        [Example("Mickey Mouse", false, false, 121236, 6, 150d)]
-        [Example("Minnie Mouse", false, false, 121237, 2, 300d)]
-        [Example("Donald Duck", false, false, 121238, 4, 200d)]
-        [Example("Daisy Duck", false, false, 121239, 1, 950d)]
-        public void RuleEngine_InvalidImplementation_NotExistingCustomer_NotEligibleForSpecialDiscount_OrderTotalNotOver1000_ReturnsInvalidStatement(
+        [Example("Mickey Mouse", CustomerType.New, false, false, 121236, 6, 150d)]
+        [Example("Minnie Mouse", CustomerType.New, false, false, 121237, 2, 300d)]
+        [Example("Donald Duck", CustomerType.New, false, false, 121238, 4, 200d)]
+        [Example("Daisy Duck", CustomerType.New, false, false, 121239, 1, 950d)]
+        public void
+            RuleEngine_InvalidImplementation_NotExistingCustomer_NotEligibleForSpecialDiscount_OrderTotalNotOver1000_ReturnsInvalidStatement(
                 string customerName,
+                CustomerType customerType,
                 bool isExisting,
                 bool isEligibleForSpecialDiscount,
                 int orderId,
@@ -181,30 +167,20 @@ namespace Service.Test
                 ICustomerService customerService,
                 IRuleRequest ruleRequest,
                 IRuleResponse ruleResponse
-        )
+            )
         {
 
             "Given the Customer is not an existing customer and therefore ineligible for a special discount nor is the customer spending over £1000"
                 .x(() =>
                 {
-                    var customer = new Customer(customerName)
-                    { IsExisting = isExisting, IsEligibleForSpecialDiscount = isEligibleForSpecialDiscount };
-                    var order = new Order(orderId, customer, quantity, unitPrice);
-
+                    ruleRequest = HydrateRuleRequest(customerName, customerType, isExisting,
+                        isEligibleForSpecialDiscount, orderId, quantity, unitPrice);
                     customerService = new CustomerService();
-
-                    ruleRequest = new RuleRequest { Customer = customer, Order = order };
                 });
             "When the Special Discount Rule is applied"
                 .x(() => { ruleResponse = customerService.Execute(ruleRequest); });
             "Then an invalid message will be returned"
-                .x(() =>
-                {
-                    using (new AssertionScope())
-                    {
-                        ruleResponse.RuleStatus.Should().Be(RuleStatus.Failed);
-                    }
-                });
+                .x(() => { InvalidAssertion(ruleResponse); });
         }
 
         /// <summary>
@@ -217,6 +193,7 @@ namespace Service.Test
         /// Then an invalid message will be returned as "IsDiscountApplied" Order property will not equal true
         /// </summary>
         /// <param name="customerName"></param>
+        /// <param name="customerType"></param>
         /// <param name="isExisting"></param>
         /// <param name="isEligibleForSpecialDiscount"></param>
         /// <param name="orderId"></param>
@@ -226,12 +203,13 @@ namespace Service.Test
         /// <param name="ruleRequest"></param>
         /// <param name="ruleResponse"></param>
         [Scenario]
-        [Example("Mickey Mouse", true, false, 121236, 6, 150d)]
-        [Example("Minnie Mouse", true, false, 121237, 2, 300d)]
-        [Example("Donald Duck", true, false, 121238, 4, 200d)]
-        [Example("Daisy Duck", true, false, 121239, 1, 950d)]
+        [Example("Mickey Mouse", CustomerType.Bronze, true, false, 121236, 6, 150d)]
+        [Example("Minnie Mouse", CustomerType.Gold, true, false, 121237, 2, 300d)]
+        [Example("Donald Duck", CustomerType.Silver, true, false, 121238, 4, 200d)]
+        [Example("Daisy Duck", CustomerType.Gold, true, false, 121239, 1, 950d)]
         public void RuleEngine_InvalidImplementation_IsExistingCustomer_NotEligibleForSpecialDiscount_OrderTotalNotOver1000_ReturnsInvalidStatement(
                 string customerName,
+                CustomerType customerType,
                 bool isExisting,
                 bool isEligibleForSpecialDiscount,
                 int orderId,
@@ -242,28 +220,64 @@ namespace Service.Test
                 IRuleResponse ruleResponse
         )
         {
-
             "Given the Customer is an existing customer but not eligible for a special discount nor is the customer spending over £1000"
                 .x(() =>
                 {
-                    var customer = new Customer(customerName)
-                    { IsExisting = isExisting, IsEligibleForSpecialDiscount = isEligibleForSpecialDiscount };
-                    var order = new Order(orderId, customer, quantity, unitPrice);
-
+                    ruleRequest = HydrateRuleRequest(customerName, customerType, isExisting,
+                        isEligibleForSpecialDiscount, orderId, quantity, unitPrice);
                     customerService = new CustomerService();
-
-                    ruleRequest = new RuleRequest { Customer = customer, Order = order };
                 });
             "When the Special Discount Rule is applied"
                 .x(() => { ruleResponse = customerService.Execute(ruleRequest); });
             "Then an invalid message will be returned"
-                .x(() =>
+                .x(() => { InvalidAssertion(ruleResponse); });
+        }
+        
+        private static void ValidAssertion(IRuleResponse ruleResponse)
+        {
+            using (new AssertionScope())
+            {
+                ruleResponse.RuleStatus.Should().Be(RuleStatus.Success);
+                
+                switch (ruleResponse.Order.Customer.CustomerType)
                 {
-                    using (new AssertionScope())
-                    {
-                        ruleResponse.RuleStatus.Should().Be(RuleStatus.Failed);
-                    }
-                });
+                    case CustomerType.Gold:
+                        ruleResponse.Order.DiscountedAmount.Should().Be(ruleResponse.Order.Amount * 0.7);
+                        break;
+                    case CustomerType.Silver:
+                        ruleResponse.Order.DiscountedAmount.Should().Be(ruleResponse.Order.Amount * 0.8);
+                        break;
+                    case CustomerType.Bronze:
+                        ruleResponse.Order.DiscountedAmount.Should().Be(ruleResponse.Order.Amount * 0.9);
+                        break;
+                    case CustomerType.New :
+                        ruleResponse.Order.DiscountedAmount.Should().Be(ruleResponse.Order.Amount);
+                        break;
+                    default:
+                        ruleResponse.Order.DiscountedAmount.Should().Be(ruleResponse.Order.Amount);
+                        break;
+                }
+            }
+        }
+
+        private static void InvalidAssertion(IRuleResponse ruleResponse)
+        {
+            using (new AssertionScope())
+            {
+                ruleResponse.RuleStatus.Should().Be(RuleStatus.Failed);
+            }
+        }
+
+        private static RuleRequest HydrateRuleRequest(string customerName, CustomerType customerType, bool isExisting,
+            bool isEligibleForSpecialDiscount, int orderId, int quantity, double unitPrice)
+        {
+            var customer = new Customer(customerName, customerType)
+                { IsExisting = isExisting, IsEligibleForSpecialDiscount = isEligibleForSpecialDiscount };
+            
+            
+            var order = new Order(orderId, customer, quantity, unitPrice);
+
+            return new RuleRequest { Customer = customer, Order = order };
         }
     }
 }

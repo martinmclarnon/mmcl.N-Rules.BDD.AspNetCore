@@ -1,5 +1,6 @@
 ﻿using System;
 using Domain;
+using Domain.Interfaces;
 using NRules.Fluent.Dsl;
 
 namespace CustomRule.Customer
@@ -15,6 +16,12 @@ namespace CustomRule.Customer
         /// </summary>
         public override void Define()
         {
+            ApplyDiscount();
+        }
+        
+        private void ApplyDiscount()
+        {
+            
             Domain.Customer customer = null;
             Order order = null;
 
@@ -36,6 +43,14 @@ namespace CustomRule.Customer
         private static void ApplyDiscount(Order order)
         {
             order.IsDiscountApplied = true;
+            
+            order.DiscountedAmount = order.Customer.CustomerType switch
+            {
+                CustomerType.Gold => order.Amount * 0.7,
+                CustomerType.Silver => order.Amount * 0.8,
+                CustomerType.Bronze => order.Amount * 0.9,
+                _ => order.Amount
+            };
         }
     }
 }

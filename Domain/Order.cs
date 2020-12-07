@@ -14,6 +14,8 @@ namespace Domain
 
         public double Amount => Quantity * UnitPrice;
         
+        public double DiscountedAmount { get; set; }
+        
         public bool IsDiscountApplied { get; set; }
 
         public Order(int id, Customer customer, int quantity, double unitPrice)

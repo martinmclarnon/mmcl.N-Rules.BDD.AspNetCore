@@ -2,8 +2,8 @@
 {
     public interface IRuleRequest
     {
-        Customer Customer { get; set; }
+        Customer Customer { get; }
 
-        Order Order { get; set; }
+        Order Order { get; }
     }
 }
